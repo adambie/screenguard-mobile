@@ -8,6 +8,16 @@ Manage screen time limits, schedules, and devices from your phone. No cloud requ
 
 Grab `screenguard-android-<version>.apk` from the [latest release](https://github.com/adambie/screenguard-mobile/releases/latest) and sideload it (enable *Install unknown apps* in Android settings first).
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/mobile-profiles.png" width="30%" alt="Profiles dashboard" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-profile-detail.png" width="30%" alt="Profile detail with usage chart" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-devices.png" width="30%" alt="Devices list" />
+</p>
+
 ## Features
 
 - mDNS auto-discovery — finds the server on your local network automatically, no manual IP needed
