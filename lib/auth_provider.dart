@@ -5,18 +5,39 @@ import 'api_client.dart';
 
 class AuthState {
   final String? serverUrl;
+
+  /// Which flavour the stored server is. Null on installs that connected
+  /// before the kind was recorded — treated as community, the safe default.
+  final ServerKind? serverKind;
   final String? token;
   final bool isLoading;
 
-  const AuthState({this.serverUrl, this.token, this.isLoading = false});
+  const AuthState({this.serverUrl, this.serverKind, this.token, this.isLoading = false});
 
   bool get isLoggedIn => token != null;
 
-  AuthState _copy({Object? serverUrl = _s, Object? token = _s, bool? isLoading}) => AuthState(
+  /// Cloud has no admin-creation endpoint, so the app can only sign in there.
+  bool get isCloud => serverKind == ServerKind.cloud;
+
+  AuthState _copy({
+    Object? serverUrl = _s,
+    Object? serverKind = _s,
+    Object? token = _s,
+    bool? isLoading,
+  }) =>
+      AuthState(
         serverUrl: serverUrl == _s ? this.serverUrl : serverUrl as String?,
+        serverKind: serverKind == _s ? this.serverKind : serverKind as ServerKind?,
         token: token == _s ? this.token : token as String?,
         isLoading: isLoading ?? this.isLoading,
       );
+}
+
+ServerKind? _kindFromName(String? name) {
+  for (final kind in ServerKind.values) {
+    if (kind.name == name) return kind;
+  }
+  return null;
 }
 
 const _s = Object();
@@ -32,19 +53,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _init() async {
     final prefs = await SharedPreferences.getInstance();
     final serverUrl = prefs.getString('server_url');
+    final serverKind = _kindFromName(prefs.getString('server_kind'));
     final token = await _storage.read(key: 'auth_token');
-    state = AuthState(serverUrl: serverUrl, token: token);
+    state = AuthState(serverUrl: serverUrl, serverKind: serverKind, token: token);
   }
 
-  Future<void> setServerUrl(String url) async {
+  Future<void> setServerUrl(String url, ServerKind kind) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('server_url', url);
-    state = state._copy(serverUrl: url, token: null);
+    await prefs.setString('server_kind', kind.name);
+    state = state._copy(serverUrl: url, serverKind: kind, token: null);
   }
 
   Future<void> clearServerUrl() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('server_url');
+    await prefs.remove('server_kind');
     await _storage.deleteAll();
     state = const AuthState();
   }
@@ -81,7 +105,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     await _storage.deleteAll();
-    state = AuthState(serverUrl: state.serverUrl);
+    state = AuthState(serverUrl: state.serverUrl, serverKind: state.serverKind);
   }
 }
 

@@ -20,6 +20,31 @@ class ScreenGuardLogo extends StatelessWidget {
   }
 }
 
+/// Logo paired with the app name, for the connect and sign-in screens.
+///
+/// The name is the brand, so it is deliberately not localized.
+class ScreenGuardWordmark extends StatelessWidget {
+  final double logoSize;
+  const ScreenGuardWordmark({super.key, this.logoSize = 56});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        ScreenGuardLogo(size: logoSize),
+        SizedBox(width: logoSize * 0.28),
+        Text(
+          'ScreenGuard',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ShieldPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

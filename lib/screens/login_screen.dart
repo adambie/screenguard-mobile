@@ -34,6 +34,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _checkSetup() async {
+    // Cloud has no /auth/status and no admin creation — accounts are made
+    // elsewhere — so don't ask, and never offer the setup form.
+    // Runs synchronously from initState, so assign rather than setState.
+    if (ref.read(authProvider).isCloud) {
+      _checkingSetup = false;
+      return;
+    }
     try {
       final data =
           await ref.read(apiClientProvider).get('/auth/status') as Map<String, dynamic>;
@@ -89,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ScreenGuardLogo(size: 72),
+              const ScreenGuardWordmark(),
               const SizedBox(height: 24),
               Text(
                 _setupNeeded ? l.createAdmin : l.signIn,

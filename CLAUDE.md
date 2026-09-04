@@ -40,22 +40,41 @@ Server discovery is mDNS over `_parctrl._tcp.local.` in `server_setup_screen.dar
 with a custom `rawDatagramSocketFactory` forcing `reusePort: false` (GrapheneOS and
 some Android kernels reject reusePort — don't "simplify" that back).
 
-Connect probe is `probeScreenGuardServer()` in `api_client.dart`: `GET /api/v1/auth/status`,
-falling back to `GET /api/v1/version` on any HTTP error. **Two server generations expose
-mirror-image endpoints** and neither has both — verified 2026-09-04:
+Connect probe is `probeScreenGuardServer()` in `api_client.dart`, which both checks
+reachability **and classifies the server**. There are two flavours, on independent
+version axes (cloud versions the product, community the wire protocol) — so never
+discriminate on the version number, only on which endpoints answer:
 
-| endpoint | self-hosted LAN server | api.screenguard.cc (0.2.7) |
+| endpoint | community (self-hosted) | cloud (`api.screenguard.cc`) |
 |---|---|---|
-| `/api/v1/auth/status` | 200 `{"setup_needed":false}` | 404 |
-| `/api/v1/version` | 404 | 200 `{"version":"0.2.7"}` |
+| `/api/v1/version` | 200, since v0.10.2 | 200 |
+| `/api/v1/auth/status` | 200 `{"setup_needed":…}` | **404** |
+| `/api/v1/auth/setup` | 200 | **404** |
+| `/api/v1/auth/signup` | — | 200 (not called by the app) |
 
-So never probe with a single endpoint. The 0.2.7 host also 404s `/auth/setup`, so
-first-time admin creation is impossible there — the app can only sign in to an existing
-account. `login_screen.dart` already degrades correctly (its `/auth/status` failure is
-swallowed and `_setupNeeded` stays false).
+Ask `/version` first (both modern servers have it), fall back to `/auth/status` for
+community servers older than v0.10.2. `/auth/status` is community-only *by construction*
+— it reads the public admin table, which multi-tenant cloud does not have — so a clean
+404 there is the cloud signal. Everything else (dashboard, profiles, agents, usage) is
+byte-identical between the two; a response-shape mismatch is not a plausible diagnosis,
+so look at auth or tenant resolution instead.
 
-Manual server entry defaults the port to **8080** when the typed address has none;
-an explicit `http://`/`https://` scheme is used verbatim (so `https://host` stays on 443).
+The result is persisted as `server_kind` alongside `server_url` and lives on
+`AuthState.serverKind` / `.isCloud`. A null kind (installs from before 0.0.11) means
+community — the safe default, since misreading community as cloud would make a fresh
+self-hosted server impossible to set up from the app.
+
+**Cloud has no onboarding path in the app.** Accounts are created on the web UI
+(`/auth/signup`); mobile only signs in, and `login_screen.dart` skips the setup check
+entirely when `isCloud`. Adding mobile signup means calling `/auth/signup`, which returns
+the same `{token, expires_at}` shape as `/auth/login`.
+
+Server entry (`server_setup_screen.dart`): a **Use ScreenGuard Cloud** button connects to
+the fixed `cloudServerUrl` with `assume: ServerKind.cloud` (kind is known at compile time,
+never probed — otherwise a cloud server that ever answered `/auth/status` would start
+offering admin creation). Self-hosted keeps mDNS discovery and manual entry; manual entry
+defaults the port to **8080** when none is typed, while an explicit `http://`/`https://`
+scheme is used verbatim (so `https://host` stays on 443).
 
 ## Release / CI
 

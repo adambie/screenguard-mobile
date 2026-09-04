@@ -52,6 +52,10 @@ class AppLocalizations {
   String get connectManually => _t('connectManually');
   String cannotReachAt(String url) => _t('cannotReachAt').replaceAll('{url}', url);
   String get cannotReachAddr => _t('cannotReachAddr');
+  String get useCloud => _t('useCloud');
+  String get cannotReachCloud => _t('cannotReachCloud');
+  String get useCloudDesc => _t('useCloudDesc');
+  String get orSelfHosted => _t('orSelfHosted');
 
   // Login
   String get signIn => _t('signIn');
@@ -266,6 +270,10 @@ class AppLocalizations {
     'connectManually': 'Connect manually',
     'cannotReachAt': 'Cannot reach server at {url}',
     'cannotReachAddr': 'Cannot reach server. Check the address and port.',
+    'useCloud': 'Use ScreenGuard Cloud',
+    'cannotReachCloud': 'Cannot reach ScreenGuard Cloud. Check your internet connection.',
+    'useCloudDesc': 'Sign in to your cloud account — no server address needed.',
+    'orSelfHosted': 'Or connect to a self-hosted server',
     'signIn': 'Sign in', 'createAdmin': 'Create admin account',
     'createAdminDesc': 'Create administrator credentials for your server.',
     'signInDesc': 'Sign in to manage parental controls.',
@@ -399,6 +407,10 @@ class AppLocalizations {
     'connectManually': 'Połącz ręcznie',
     'cannotReachAt': 'Nie można połączyć z serwerem {url}',
     'cannotReachAddr': 'Nie można połączyć z serwerem. Sprawdź adres i port.',
+    'useCloud': 'Użyj ScreenGuard Cloud',
+    'cannotReachCloud': 'Nie można połączyć z ScreenGuard Cloud. Sprawdź połączenie z internetem.',
+    'useCloudDesc': 'Zaloguj się na konto w chmurze — bez podawania adresu serwera.',
+    'orSelfHosted': 'Albo połącz z własnym serwerem',
     'signIn': 'Zaloguj się', 'createAdmin': 'Utwórz konto administratora',
     'createAdminDesc': 'Utwórz dane logowania administratora dla serwera.',
     'signInDesc': 'Zaloguj się, aby zarządzać kontrolą rodzicielską.',
@@ -522,6 +534,10 @@ class AppLocalizations {
     'connectManually': 'Conectar manualmente',
     'cannotReachAt': 'No se puede conectar al servidor en {url}',
     'cannotReachAddr': 'No se puede conectar al servidor. Verifica la dirección y el puerto.',
+    'useCloud': 'Usar ScreenGuard Cloud',
+    'cannotReachCloud': 'No se puede conectar a ScreenGuard Cloud. Verifica tu conexión a internet.',
+    'useCloudDesc': 'Inicia sesión en tu cuenta en la nube: no necesitas la dirección del servidor.',
+    'orSelfHosted': 'O conéctate a un servidor autoalojado',
     'signIn': 'Iniciar sesión', 'createAdmin': 'Crear cuenta de administrador',
     'createAdminDesc': 'Crea credenciales de administrador para tu servidor.',
     'signInDesc': 'Inicia sesión para gestionar el control parental.',
@@ -642,6 +658,10 @@ class AppLocalizations {
     'connectManually': 'Se connecter manuellement',
     'cannotReachAt': 'Impossible de joindre le serveur à {url}',
     'cannotReachAddr': "Impossible de joindre le serveur. Vérifiez l'adresse et le port.",
+    'useCloud': 'Utiliser ScreenGuard Cloud',
+    'cannotReachCloud': 'Impossible de joindre ScreenGuard Cloud. Vérifiez votre connexion internet.',
+    'useCloudDesc': 'Connectez-vous à votre compte cloud — aucune adresse de serveur nécessaire.',
+    'orSelfHosted': 'Ou connectez-vous à un serveur auto-hébergé',
     'signIn': 'Se connecter', 'createAdmin': 'Créer un compte administrateur',
     'createAdminDesc': 'Créez des identifiants administrateur pour votre serveur.',
     'signInDesc': 'Connectez-vous pour gérer le contrôle parental.',
@@ -762,6 +782,10 @@ class AppLocalizations {
     'connectManually': 'Manuell verbinden',
     'cannotReachAt': 'Server unter {url} nicht erreichbar',
     'cannotReachAddr': 'Server nicht erreichbar. Adresse und Port prüfen.',
+    'useCloud': 'ScreenGuard Cloud verwenden',
+    'cannotReachCloud': 'ScreenGuard Cloud nicht erreichbar. Internetverbindung prüfen.',
+    'useCloudDesc': 'Bei Ihrem Cloud-Konto anmelden – keine Serveradresse nötig.',
+    'orSelfHosted': 'Oder mit einem selbst gehosteten Server verbinden',
     'signIn': 'Anmelden', 'createAdmin': 'Administrator-Konto erstellen',
     'createAdminDesc': 'Erstellen Sie Administrator-Anmeldedaten für Ihren Server.',
     'signInDesc': 'Melden Sie sich an, um die Kindersicherung zu verwalten.',
@@ -882,6 +906,10 @@ class AppLocalizations {
     'connectManually': 'Conectar manualmente',
     'cannotReachAt': 'Não é possível alcançar o servidor em {url}',
     'cannotReachAddr': 'Não é possível alcançar o servidor. Verifique o endereço e a porta.',
+    'useCloud': 'Usar o ScreenGuard Cloud',
+    'cannotReachCloud': 'Não é possível alcançar o ScreenGuard Cloud. Verifique sua conexão com a internet.',
+    'useCloudDesc': 'Entre na sua conta na nuvem — sem endereço de servidor.',
+    'orSelfHosted': 'Ou conecte-se a um servidor auto-hospedado',
     'signIn': 'Entrar', 'createAdmin': 'Criar conta de administrador',
     'createAdminDesc': 'Crie credenciais de administrador para o seu servidor.',
     'signInDesc': 'Entre para gerenciar o controle parental.',

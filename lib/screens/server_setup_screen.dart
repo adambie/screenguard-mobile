@@ -28,7 +28,9 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
   final _ctrl = TextEditingController();
   bool _connecting = false;
   bool _scanning = true;
+  bool _cloudBusy = false;
   String? _error;
+  String? _cloudError;
   final List<DiscoveredServer> _discovered = [];
 
   @override
@@ -95,6 +97,31 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     if (mounted) setState(() => _scanning = false);
   }
 
+  /// Cloud lives at a fixed address and its flavour is known up front, so this
+  /// is one request and never classifies — a cloud server that ever answered
+  /// `/auth/status` must not start offering admin creation.
+  Future<void> _connectCloud() async {
+    setState(() {
+      _connecting = true;
+      _cloudBusy = true;
+      _cloudError = null;
+      _error = null;
+    });
+
+    try {
+      await probeScreenGuardServer(cloudServerUrl, assume: ServerKind.cloud);
+      await ref
+          .read(authProvider.notifier)
+          .setServerUrl(cloudServerUrl, ServerKind.cloud);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _cloudError = AppLocalizations.of(context).cannotReachCloud);
+      }
+    } finally {
+      if (mounted) setState(() { _connecting = false; _cloudBusy = false; });
+    }
+  }
+
   Future<void> _connect(String url) async {
     setState(() {
       _connecting = true;
@@ -102,8 +129,8 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     });
 
     try {
-      await probeScreenGuardServer(url);
-      await ref.read(authProvider.notifier).setServerUrl(url);
+      final kind = await probeScreenGuardServer(url);
+      await ref.read(authProvider.notifier).setServerUrl(url, kind);
     } catch (_) {
       if (mounted) {
         setState(() => _error = AppLocalizations.of(context).cannotReachAt(url));
@@ -141,8 +168,8 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     try {
       for (final url in ['http://$authority', 'https://$authority']) {
         try {
-          await probeScreenGuardServer(url);
-          await ref.read(authProvider.notifier).setServerUrl(url);
+          final kind = await probeScreenGuardServer(url);
+          await ref.read(authProvider.notifier).setServerUrl(url, kind);
           return;
         } catch (_) {}
       }
@@ -166,7 +193,7 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ScreenGuardLogo(size: 72),
+              const ScreenGuardWordmark(),
               const SizedBox(height: 24),
               Text(
                 l.connectToServer,
@@ -184,6 +211,41 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 32),
+
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: _connecting ? null : _connectCloud,
+                  icon: _cloudBusy
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.cloud_outlined),
+                  label: Text(l.useCloud),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _cloudError ?? l.useCloudDesc,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _cloudError != null ? cs.error : cs.onSurfaceVariant,
+                    ),
+              ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+              Text(
+                l.orSelfHosted,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
 
               Row(
                 children: [

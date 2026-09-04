@@ -80,17 +80,40 @@ class UnauthorizedException extends ApiException {
   const UnauthorizedException() : super(401, 'Session expired. Please sign in again.');
 }
 
-/// Confirms [baseUrl] speaks the ScreenGuard API.
+/// Which flavour of ScreenGuard server an address points at.
 ///
-/// Server builds disagree on which endpoint is cheap to probe: older ones
-/// expose `/auth/status` but no `/version`, newer ones the reverse. Accept
-/// either, so a setup probe is not tied to one server generation. Socket
-/// errors and timeouts propagate — only an HTTP error response is retried.
-Future<void> probeScreenGuardServer(String baseUrl) async {
+/// Not a version split: cloud and community version on separate axes, so the
+/// number tells you nothing. Which endpoints answer is the structural fact.
+enum ServerKind { community, cloud }
+
+/// Hosted ScreenGuard Cloud. Fixed, so the cloud path needs no typed address.
+const cloudServerUrl = 'https://api.screenguard.cc';
+
+/// Confirms [baseUrl] speaks the ScreenGuard API, and reports which flavour.
+///
+/// `/version` is asked first: both modern servers answer it (community since
+/// v0.10.2, cloud since its first release). `/auth/status` is the fallback for
+/// community servers older than that — a shrinking set — and doubles as the
+/// classifier, since it is community-only by construction: it reads the public
+/// admin table, which multi-tenant cloud does not have and never will.
+///
+/// Pass [assume] when the flavour is known up front (the cloud button), which
+/// also skips the classifying request. Unknown or ambiguous means community —
+/// the safe default, since only community can be set up from the app — but a
+/// transport failure propagates rather than persisting a guess.
+Future<ServerKind> probeScreenGuardServer(String baseUrl, {ServerKind? assume}) async {
   final client = ApiClient(baseUrl: baseUrl);
   try {
-    await client.get('/auth/status');
-  } on ApiException {
     await client.get('/version');
+  } on ApiException {
+    await client.get('/auth/status');
+    return ServerKind.community;
   }
+  if (assume != null) return assume;
+  try {
+    await client.get('/auth/status');
+  } on ApiException catch (e) {
+    if (e.statusCode == 404) return ServerKind.cloud;
+  }
+  return ServerKind.community;
 }
