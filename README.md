@@ -42,7 +42,10 @@ The APK will be at `build/app/outputs/flutter-apk/app-release.apk`.
 
 ## Server compatibility
 
-The app calls `GET /api/v1/version` on startup to verify it is talking to a compatible server. If the server is too old, a warning is shown.
+The app does not check the server's version. On connect it probes `GET /api/v1/auth/status`
+to confirm the address is a reachable ScreenGuard server — nothing more. Against an older
+server the connection still succeeds and any feature whose endpoint is missing fails only
+when you use it, so make sure the server is v0.10.1 or later.
 
 ## Related
 
