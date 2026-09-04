@@ -79,3 +79,18 @@ class ApiClient {
 class UnauthorizedException extends ApiException {
   const UnauthorizedException() : super(401, 'Session expired. Please sign in again.');
 }
+
+/// Confirms [baseUrl] speaks the ScreenGuard API.
+///
+/// Server builds disagree on which endpoint is cheap to probe: older ones
+/// expose `/auth/status` but no `/version`, newer ones the reverse. Accept
+/// either, so a setup probe is not tied to one server generation. Socket
+/// errors and timeouts propagate — only an HTTP error response is retried.
+Future<void> probeScreenGuardServer(String baseUrl) async {
+  final client = ApiClient(baseUrl: baseUrl);
+  try {
+    await client.get('/auth/status');
+  } on ApiException {
+    await client.get('/version');
+  }
+}

@@ -102,7 +102,7 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     });
 
     try {
-      await ApiClient(baseUrl: url).get('/auth/status');
+      await probeScreenGuardServer(url);
       await ref.read(authProvider.notifier).setServerUrl(url);
     } catch (_) {
       if (mounted) {
@@ -122,20 +122,32 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
       return;
     }
 
-    setState(() { _connecting = true; _error = null; });
-    final httpUrl = 'http://$input';
-    final httpsUrl = 'https://$input';
+    // The port is optional: without one the server is assumed to be on 8080.
+    // Validate by parsing with a scheme attached — bare "host.example:8080"
+    // would otherwise parse as scheme "host.example" with path "8080". The
+    // authority is taken from the raw text, since Uri drops an explicit :80.
+    final authorityInput = input.split('/').first;
     try {
-      await ApiClient(baseUrl: httpUrl).get('/auth/status');
-      await ref.read(authProvider.notifier).setServerUrl(httpUrl);
-    } catch (_) {
-      try {
-        await ApiClient(baseUrl: httpsUrl).get('/auth/status');
-        await ref.read(authProvider.notifier).setServerUrl(httpsUrl);
-      } catch (_) {
-        if (mounted) {
-          setState(() => _error = AppLocalizations.of(context).cannotReachAddr);
-        }
+      if (Uri.parse('http://$input').host.isEmpty) throw const FormatException();
+    } on FormatException {
+      setState(() => _error = AppLocalizations.of(context).cannotReachAddr);
+      return;
+    }
+    final authority = RegExp(r':\d+$').hasMatch(authorityInput)
+        ? authorityInput
+        : '$authorityInput:8080';
+
+    setState(() { _connecting = true; _error = null; });
+    try {
+      for (final url in ['http://$authority', 'https://$authority']) {
+        try {
+          await probeScreenGuardServer(url);
+          await ref.read(authProvider.notifier).setServerUrl(url);
+          return;
+        } catch (_) {}
+      }
+      if (mounted) {
+        setState(() => _error = AppLocalizations.of(context).cannotReachAddr);
       }
     } finally {
       if (mounted) setState(() => _connecting = false);
