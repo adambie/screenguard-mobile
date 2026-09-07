@@ -82,7 +82,7 @@ scheme is used verbatim (so `https://host` stays on 443).
 matching `v*`. There is no `workflow_dispatch`, no PR/push-to-main CI.
 
 Steps: checkout → JDK 17 (temurin) → `subosito/flutter-action@v2` (`channel: stable`,
-no pinned version) → `flutter pub get` → `flutter build apk --release
+`flutter-version: '3.47.2'`) → `flutter pub get` → `flutter build apk --release
 --dart-define=APP_VERSION=${GITHUB_REF_NAME#v}` → rename to
 `dist/screenguard-android-<version>.apk` → `softprops/action-gh-release@v2` with
 `generate_release_notes: true`.
@@ -131,10 +131,19 @@ Current state: tag `v0.0.9`, one release, one successful run.
   `test/widget_test.dart` never actually runs anywhere, and a compile error surfaces only
   when a tag is pushed. Reason carefully about Dart changes; you cannot compile-check them
   here. Say so rather than claiming a change is verified.
-- `applicationId` is still the scaffold placeholder `com.parentalcontrol.mobile`, with
-  Flutter's TODO comments intact. Changing it breaks upgrades for existing installs.
-- `channel: stable` is unpinned against `sdk: ^3.12.2`, so builds are not reproducible;
-  a green build today can break on a Flutter stable release.
+- `applicationId` / `namespace` is `cc.screenguard.mobile` (renamed from the scaffold
+  placeholder `com.parentalcontrol.mobile` before F-Droid submission; the Kotlin source
+  lives at `android/app/src/main/kotlin/cc/screenguard/mobile/`). Changing it again breaks
+  upgrades for existing installs, and after an F-Droid publish it is the permanent app
+  identity — don't. The unbuilt ios/macos/linux/windows runner dirs still carry the old
+  id; harmless, since Android is the only shipped target.
+- Flutter is pinned to `3.47.2` in `release.yml` (the version the green v0.0.11 build ran
+  on, matching `sdk: ^3.12.2`). Two reasons not to unpin: unpinned `stable` makes builds
+  unreproducible, and F-Droid's Flutter recipe `sed`s that exact
+  `flutter-version: '…'` line to check out the matching Flutter revision — the recipe
+  asserts a non-empty match, so removing or reformatting it fails their build. Keep it
+  the *only* such line in the file: their `sed -n …p` prints every match, so a second
+  `flutter-version:` (a matrix entry, another job) would break their checkout.
 - Android permissions (`android/app/src/main/AndroidManifest.xml`): INTERNET,
   ACCESS_WIFI_STATE, ACCESS_NETWORK_STATE, CHANGE_WIFI_MULTICAST_STATE (the last is what
   makes mDNS discovery work).

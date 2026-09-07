@@ -23,6 +23,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Pinned: reproducible builds, and F-Droid's recipe reads this line
+          # to check out the matching Flutter revision.
+          flutter-version: '3.47.2'
 
       - name: Flutter pub get
         run: flutter pub get
