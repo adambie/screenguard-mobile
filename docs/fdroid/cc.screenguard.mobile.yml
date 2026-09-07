@@ -1,0 +1,63 @@
+# F-Droid build recipe for ScreenGuard Mobile.
+#
+# This file does NOT belong to this repo's build — it is the copy of what gets
+# submitted to https://gitlab.com/fdroid/fdroiddata as
+# metadata/cc.screenguard.mobile.yml. Kept here so future releases can be added
+# without rediscovering the recipe.
+#
+# Adding a release: append a Builds block (copy the last one, change versionName,
+# versionCode and commit), and bump CurrentVersion / CurrentVersionCode.
+
+Categories:
+  - System
+  - Time Tracker
+License: AGPL-3.0-only
+AuthorName: Adam Bielawny
+SourceCode: https://github.com/adambie/screenguard-mobile
+IssueTracker: https://github.com/adambie/screenguard-mobile/issues
+Changelog: https://github.com/adambie/screenguard-mobile/releases
+
+AutoName: ScreenGuard
+
+RepoType: git
+Repo: https://github.com/adambie/screenguard-mobile.git
+
+Builds:
+  - versionName: 0.0.12
+    versionCode: 12
+    commit: v0.0.12
+    output: build/app/outputs/flutter-apk/app-release.apk
+    srclibs:
+      - flutter@stable
+    rm:
+      - ios
+      - linux
+      - macos
+      - web
+      - windows
+    prebuild:
+      # Pin Flutter to the version upstream's release workflow builds with.
+      - flutterVersion=$(sed -n -E "s/.*flutter-version:\ '(.*)'/\1/p" .github/workflows/release.yml)
+      - '[[ $flutterVersion ]]'
+      - git -C $$flutter$$ checkout -f $flutterVersion
+      # Keep the pub cache inside the build dir so the scanner can see it.
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get --enforce-lockfile
+    scanignore:
+      - .pub-cache
+    scandelete:
+      - .pub-cache
+    build:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      # Read the version from pubspec.yaml rather than hardcoding it, so build
+      # blocks added by AutoUpdateMode stay correct. Feeds the About screen.
+      - export APP_VERSION=$(sed -n -E 's/^version: (.*)\+.*/\1/p' pubspec.yaml)
+      - '[[ $APP_VERSION ]]'
+      - $$flutter$$/bin/flutter build apk --release --dart-define=APP_VERSION=$APP_VERSION
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
+CurrentVersion: 0.0.12
+CurrentVersionCode: 12

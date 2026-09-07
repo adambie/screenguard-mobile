@@ -118,6 +118,33 @@ existing release rather than failing, so a re-run replaces the asset in place.
 
 Current state: tag `v0.0.9`, one release, one successful run.
 
+## F-Droid
+
+Submission is in progress; the app is not listed yet. Two pieces live in this repo:
+
+- `fastlane/metadata/android/en-US/` — F-Droid harvests this from the source repo to
+  build the listing. **Every release needs `changelogs/<versionCode>.txt`** (literally the
+  versionCode, no padding, max 500 chars) or that version ships with no release notes.
+  `full_description.txt` takes F-Droid's HTML subset (`b`, `i`, `ul`, `li`, `a href`, …) —
+  markdown is not rendered. Only `en-US` exists so far; the other 5 shipped locales could
+  get their own dirs.
+- `docs/fdroid/cc.screenguard.mobile.yml` — reference copy of the build recipe. The real
+  one lives in fdroiddata; this copy exists so a new release can append a Builds block
+  without rediscovering the recipe. It pulls Flutter via the `flutter` **srclib** (not a
+  submodule, so the SDK stays out of this repo) and derives both the Flutter version and
+  `APP_VERSION` by `sed`ing `release.yml` and `pubspec.yaml` — both verified to match
+  exactly once. Universal APK, no `--split-per-abi`, so no `VercodeOperation`.
+
+`docs/icon.svg` is the source for the 512x512 listing icon (the launcher icon is only
+defined as Android vector drawables, max 192x192 as PNG). Regeneration command is in the
+SVG's own comment.
+
+IzzyOnDroid was considered and dropped: their inclusion policy rejects "vibe-coded" apps
+and wants the code itself free of LLM-generated content, which this repo's commit
+trailers contradict. F-Droid proper has no equivalent clause. Their 30 MB per-file cap
+would also have forced `--split-per-abi` (the universal APK is 57.7 MB, ~54 MB of it
+three ABIs' Flutter engine).
+
 ## Constraints to respect
 
 - **Release APKs are signed with the Android *debug* key.** `build.gradle.kts:31-33`
