@@ -1,0 +1,5 @@
+The app's package name changed from com.parentalcontrol.mobile to cc.screenguard.mobile, replacing a placeholder left over from the project scaffold.
+
+Android treats this as a separate app, so this version installs alongside an older ScreenGuard rather than updating it. Uninstall the previous version once you have signed in again; server settings are not carried over.
+
+Builds are now pinned to a fixed Flutter version.

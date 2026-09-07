@@ -1,0 +1,20 @@
+Android companion app for ScreenGuard, the self-hosted parental control system for Linux.
+
+The app talks directly to your own ScreenGuard server over your local network. There is no account to create, no telemetry, and no third party between your phone and your server. An optional hosted service exists, but self-hosting is the primary way to run it.
+
+<b>What you can do</b>
+<ul>
+<li>Find your server automatically on the local network via mDNS, with no IP address to type in</li>
+<li>Set daily screen time limits and weekly schedules per profile</li>
+<li>Lock a profile immediately, or send a message to whoever is using it</li>
+<li>Approve and pair new devices, rename them, and assign users to profiles</li>
+<li>Review usage over time with per-profile charts</li>
+</ul>
+
+<b>Requirements</b>
+<ul>
+<li>A running ScreenGuard server (v0.10.1 or later) reachable from your phone</li>
+<li>The server and agent are separate free software, at https://github.com/adambie/screenguard</li>
+</ul>
+
+Light and dark themes, and the interface is available in English, Polish, Spanish, French, German and Portuguese.

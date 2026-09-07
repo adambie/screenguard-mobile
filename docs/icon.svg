@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Source of truth for the app icon.
+  Mirrors android/app/src/main/res/drawable/ic_launcher_{background,foreground}.xml:
+  black 48x48 ground, Material shield outline (24x24 path) centred via translate(12,12).
+  Regenerate the F-Droid listing icon with:
+    rsvg-convert -w 512 -h 512 docs/icon.svg -o fastlane/metadata/android/en-US/images/icon.png
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 48 48">
+  <rect width="48" height="48" fill="#000000"/>
+  <g transform="translate(12,12)">
+    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"
+          fill="none" stroke="#1A73E8" stroke-width="1.8" stroke-linejoin="round"/>
+  </g>
+</svg>
