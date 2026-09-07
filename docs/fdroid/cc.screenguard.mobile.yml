@@ -11,7 +11,7 @@
 Categories:
   - System
   - Time Tracker
-License: AGPL-3.0-only
+License: AGPL-3.0-or-later
 AuthorName: Adam Bielawny
 SourceCode: https://github.com/adambie/screenguard-mobile
 IssueTracker: https://github.com/adambie/screenguard-mobile/issues
@@ -43,9 +43,10 @@ Builds:
       # Keep the pub cache inside the build dir so the scanner can see it.
       - export PUB_CACHE=$(pwd)/.pub-cache
       - $$flutter$$/bin/flutter config --no-analytics
-      - $$flutter$$/bin/flutter pub get --enforce-lockfile
-    scanignore:
-      - .pub-cache
+      - $$flutter$$/bin/flutter pub get
+    # No scanignore: the Flutter SDK lives outside the app build dir on the
+    # srclib path, and PUB_CACHE is pointed inside it deliberately so the
+    # scanner *does* see the dart packages.
     scandelete:
       - .pub-cache
     build:

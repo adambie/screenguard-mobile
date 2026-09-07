@@ -50,3 +50,8 @@ when you use it, so make sure the server is v0.10.1 or later.
 ## Related
 
 - [screenguard](https://github.com/adambie/screenguard) — the server and agent
+
+## License
+
+GNU Affero General Public License, version 3 or (at your option) any later version —
+`AGPL-3.0-or-later`. See [LICENSE](LICENSE) for the full text.
