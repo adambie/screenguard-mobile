@@ -12,8 +12,13 @@ class ApiException implements Exception {
 class ApiClient {
   final String baseUrl;
   final String? token;
+  final Duration timeout;
 
-  ApiClient({required this.baseUrl, this.token});
+  ApiClient({
+    required this.baseUrl,
+    this.token,
+    this.timeout = const Duration(seconds: 10),
+  });
 
   String get _base {
     final url = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
@@ -28,7 +33,7 @@ class ApiClient {
   Future<dynamic> get(String path) async {
     final res = await http
         .get(Uri.parse('$_base$path'), headers: _headers)
-        .timeout(const Duration(seconds: 10));
+        .timeout(timeout);
     return _handle(res);
   }
 
@@ -36,28 +41,28 @@ class ApiClient {
     final res = await http
         .post(Uri.parse('$_base$path'), headers: _headers,
             body: body != null ? jsonEncode(body) : null)
-        .timeout(const Duration(seconds: 10));
+        .timeout(timeout);
     return _handle(res);
   }
 
   Future<dynamic> put(String path, Object body) async {
     final res = await http
         .put(Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body))
-        .timeout(const Duration(seconds: 10));
+        .timeout(timeout);
     return _handle(res);
   }
 
   Future<dynamic> patch(String path, Object body) async {
     final res = await http
         .patch(Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body))
-        .timeout(const Duration(seconds: 10));
+        .timeout(timeout);
     return _handle(res);
   }
 
   Future<dynamic> delete(String path) async {
     final res = await http
         .delete(Uri.parse('$_base$path'), headers: _headers)
-        .timeout(const Duration(seconds: 10));
+        .timeout(timeout);
     return _handle(res);
   }
 
@@ -101,14 +106,24 @@ const cloudServerUrl = 'https://api.screenguard.cc';
 /// also skips the classifying request. Unknown or ambiguous means community —
 /// the safe default, since only community can be set up from the app — but a
 /// transport failure propagates rather than persisting a guess.
-Future<ServerKind> probeScreenGuardServer(String baseUrl, {ServerKind? assume}) async {
-  final client = ApiClient(baseUrl: baseUrl);
+///
+/// Each answer must carry its ScreenGuard field (`version`, `setup_needed`), so
+/// another service on the port that happens to answer 200 is not taken for a
+/// server; that matters most for discovery, which probes hosts nobody typed.
+Future<ServerKind> probeScreenGuardServer(
+  String baseUrl, {
+  ServerKind? assume,
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  final client = ApiClient(baseUrl: baseUrl, timeout: timeout);
+  final dynamic version;
   try {
-    await client.get('/version');
+    version = await client.get('/version');
   } on ApiException {
-    await client.get('/auth/status');
+    _requireField(await client.get('/auth/status'), 'setup_needed');
     return ServerKind.community;
   }
+  _requireField(version, 'version');
   if (assume != null) return assume;
   try {
     await client.get('/auth/status');
@@ -116,4 +131,10 @@ Future<ServerKind> probeScreenGuardServer(String baseUrl, {ServerKind? assume}) 
     if (e.statusCode == 404) return ServerKind.cloud;
   }
   return ServerKind.community;
+}
+
+void _requireField(dynamic body, String field) {
+  if (body is! Map || !body.containsKey(field)) {
+    throw const FormatException('Not a ScreenGuard server');
+  }
 }

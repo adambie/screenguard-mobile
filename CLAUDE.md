@@ -45,8 +45,10 @@ on port 8080. The peer list comes from `MainActivity.kt` over the
 `cc.screenguard.mobile/tailnet` method channel (`lib/tailnet.dart`): Tailscale's
 Android client installs one /32 VPN route per peer, readable by any app through
 `ConnectivityManager.getLinkProperties()`; addresses in 100.64.0.0/10 minus its
-100.100.100.100 resolver are the peers. A 2 s TCP connect drops offline peers before
-the HTTP probe; names come from a reverse lookup via MagicDNS.
+100.100.100.100 resolver are the peers. Peers are probed 16 at a time with a 4 s
+timeout (offline peers drop packets rather than refuse); the probe requires the
+`version` / `setup_needed` field, so another service on 8080 is not listed. Names
+come from a reverse lookup via MagicDNS.
 
 Connect probe is `probeScreenGuardServer()` in `api_client.dart`, which both checks
 reachability **and classifies the server**. There are two flavours, on independent

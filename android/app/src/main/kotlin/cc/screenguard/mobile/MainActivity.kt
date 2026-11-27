@@ -22,8 +22,11 @@ class MainActivity : FlutterActivity() {
      *
      * Tailscale's Android client routes every peer as its own /32 through its
      * VPN, and those routes are visible to other apps — the only peer list an
-     * app outside Tailscale can read. 100.64.0.0/10 is Tailscale's address
-     * space; 100.100.100.100 in it is Tailscale's DNS resolver, not a peer.
+     * app outside Tailscale can read. A tailnet whose control plane switches on
+     * Tailscale's single-CGNAT-route mode (one 100.64.0.0/10 route instead),
+     * or a Tailscale split-tunnel setting that leaves this app out, yields no
+     * peers. 100.64.0.0/10 is Tailscale's address space; 100.100.100.100 in it
+     * is Tailscale's DNS resolver, not a peer.
      */
     @Suppress("DEPRECATION") // allNetworks: its replacement is a callback, overkill for a one-shot read
     private fun tailnetPeers(): List<String> {

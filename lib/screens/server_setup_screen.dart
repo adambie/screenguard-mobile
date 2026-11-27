@@ -11,6 +11,10 @@ import '../tailnet.dart';
 /// Port a self-hosted ScreenGuard server listens on unless configured otherwise.
 const _defaultPort = 8080;
 
+/// Tailnet peers probed at once: enough to finish a home tailnet in one round,
+/// few enough that a large shared tailnet is not hit all at the same moment.
+const _tailnetProbes = 16;
+
 class DiscoveredServer {
   final String host;
   final int port;
@@ -113,9 +117,9 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
   }
 
   /// mDNS does not cross a Tailscale network, so each peer is asked directly
-  /// on the default port. A quick TCP connect first drops offline peers and
-  /// peers with nothing on that port, which would otherwise each hold the
-  /// scan for the full HTTP timeout.
+  /// on the default port, [_tailnetProbes] at a time. Offline peers drop
+  /// packets rather than refuse them, so the short timeout is what keeps them
+  /// from holding the scan.
   Future<void> _scanTailnet() async {
     final List<String> peers;
     try {
@@ -123,20 +127,27 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     } catch (_) {
       return;
     }
-    await Future.wait(peers.map((ip) async {
-      try {
-        final socket = await Socket.connect(ip, _defaultPort,
-            timeout: const Duration(seconds: 2));
-        socket.destroy();
-        await probeScreenGuardServer('http://$ip:$_defaultPort');
+    final pending = peers.iterator;
+    Future<void> probeNext() async {
+      while (pending.moveNext()) {
+        final ip = pending.current;
+        final name = tailnetName(ip);
+        try {
+          await probeScreenGuardServer('http://$ip:$_defaultPort',
+              timeout: const Duration(seconds: 4));
+        } catch (_) {
+          continue;
+        }
         _found(DiscoveredServer(
           host: ip,
           port: _defaultPort,
-          name: await tailnetName(ip) ?? '',
+          name: await name ?? '',
           tailnet: true,
         ));
-      } catch (_) {}
-    }));
+      }
+    }
+
+    await Future.wait(List.generate(_tailnetProbes, (_) => probeNext()));
   }
 
   /// Cloud lives at a fixed address and its flavour is known up front, so this
@@ -335,7 +346,7 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
                           leading: Icon(s.tailnet ? Icons.vpn_lock : Icons.dns,
                               color: cs.primary),
                           title: Text(s.name.isNotEmpty ? s.name : 'ScreenGuard'),
-                          subtitle: Text(s.url),
+                          subtitle: Text(s.tailnet ? 'Tailscale · ${s.url}' : s.url),
                           trailing: _connecting
                               ? const SizedBox(
                                   height: 20,
