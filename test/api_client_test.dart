@@ -12,15 +12,30 @@ Future<void> withServer(
 
 void main() {
   final client = ApiClient(baseUrl: 'http://sg');
-  final unreachable = throwsA(isA<NetworkException>()
-      .having((e) => e.maybeApplied, 'maybeApplied', false));
+  NetworkException? networkError(Object e) => e is NetworkException ? e : null;
 
-  test('a refused connection surfaces as a NetworkException', () async {
-    // what IOClient reports on Android when nothing answers
-    await withServer((_) => throw http.ClientException('Connection refused'),
-        () => expectLater(client.post('/profiles/p/adjustments', {}), unreachable));
-    await withServer((_) => throw const SocketException('unreachable'),
-        () => expectLater(client.get('/profiles/p'), unreachable));
+  test('a failed read surfaces as a NetworkException that changed nothing', () async {
+    // ClientException is what IOClient reports on Android when nothing answers
+    for (final error in [http.ClientException('Connection refused'), const SocketException('unreachable')]) {
+      await withServer((_) => throw error, () async {
+        final e = await client.get('/profiles/p').then((_) => null, onError: networkError);
+        expect(e?.maybeApplied, false);
+      });
+    }
+  });
+
+  test('a write whose answer is lost may have been applied', () async {
+    final received = <String>[];
+    await withServer((req) async {
+      received.add(req.url.path);
+      throw http.ClientException('Connection reset by peer');
+    }, () async {
+      final e = await client
+          .post('/profiles/p/app-group-adjustments', {'minutes': 15})
+          .then((_) => null, onError: networkError);
+      expect(e?.maybeApplied, true);
+    });
+    expect(received, ['/api/v1/profiles/p/app-group-adjustments']);
   });
 
   test('a server error stays an ApiException with its status and message', () async {

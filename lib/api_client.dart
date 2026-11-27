@@ -15,8 +15,10 @@ class ApiException implements Exception {
 /// The request got no answer: no connection, a TLS failure, or a timeout.
 /// Screens already report [ApiException]s, so this reaches them the same way.
 class NetworkException extends ApiException {
-  /// A write that timed out: the server may have applied it all the same, so
-  /// the message asks for a refresh rather than a blind retry.
+  /// A write that got no answer: a timeout, or a connection dropped after the
+  /// request went out, may follow a server that applied it all the same, and
+  /// the client cannot tell those from a request never sent. So the message
+  /// asks for a refresh rather than a blind retry.
   final bool maybeApplied;
 
   const NetworkException({this.maybeApplied = false}) : super(0, '');
@@ -65,12 +67,11 @@ class ApiClient {
     final http.Response res;
     try {
       res = await request().timeout(const Duration(seconds: 10));
-    } on TimeoutException {
-      throw NetworkException(maybeApplied: write);
-    } on IOException {
-      throw const NetworkException();
-    } on http.ClientException {
-      throw const NetworkException();
+    } on Exception catch (e) {
+      if (e is TimeoutException || e is IOException || e is http.ClientException) {
+        throw NetworkException(maybeApplied: write);
+      }
+      rethrow;
     }
     return _handle(res);
   }
