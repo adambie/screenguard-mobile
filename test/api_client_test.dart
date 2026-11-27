@@ -18,7 +18,7 @@ void main() {
     // ClientException is what IOClient reports on Android when nothing answers
     for (final error in [http.ClientException('Connection refused'), const SocketException('unreachable')]) {
       await withServer((_) => throw error, () async {
-        final e = await client.get('/profiles/p').then((_) => null, onError: networkError);
+        final e = await client.get('/profiles/p').then<NetworkException?>((_) => null, onError: networkError);
         expect(e?.maybeApplied, false);
       });
     }
@@ -32,7 +32,7 @@ void main() {
     }, () async {
       final e = await client
           .post('/profiles/p/app-group-adjustments', {'minutes': 15})
-          .then((_) => null, onError: networkError);
+          .then<NetworkException?>((_) => null, onError: networkError);
       expect(e?.maybeApplied, true);
     });
     expect(received, ['/api/v1/profiles/p/app-group-adjustments']);
