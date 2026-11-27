@@ -124,6 +124,87 @@ class DailyLimit {
       };
 }
 
+class AppGroup {
+  final String id;
+  final String name;
+  final String? builtin; // null, 'games', 'browsers' or 'blocked'
+  final List<DailyLimit> limits;
+  final int adjustmentToday; // net minutes, may be negative
+  final int todaySeconds;
+
+  const AppGroup({
+    required this.id,
+    required this.name,
+    this.builtin,
+    required this.limits,
+    required this.adjustmentToday,
+    required this.todaySeconds,
+  });
+
+  factory AppGroup.fromJson(Map<String, dynamic> j) => AppGroup(
+        id: j['id'] as String,
+        name: j['name'] as String,
+        builtin: j['builtin'] as String?,
+        limits: ((j['limits'] as List?) ?? [])
+            .map((l) => DailyLimit.fromJson(l as Map<String, dynamic>))
+            .toList(),
+        adjustmentToday: (j['adjustment_today'] as int?) ?? 0,
+        todaySeconds: (j['today_seconds'] as int?) ?? 0,
+      );
+
+  /// The server keeps this group blocked at all times and rejects limits and
+  /// adjustments for it.
+  bool get isBlockedGroup => builtin == 'blocked';
+
+  /// Configured minutes for [weekday] (0=Mon), null when that day has no limit.
+  int? limitFor(int weekday) {
+    for (final l in limits) {
+      if (l.dayOfWeek == weekday) return l.allowedMinutes;
+    }
+    return null;
+  }
+
+  /// Minutes allowed on [weekday] once today's adjustment is applied, or null
+  /// when that day has no limit. 0 means blocked.
+  int? allowedMinutesWithAdjustment(int weekday) {
+    final limit = limitFor(weekday);
+    if (limit == null) return null;
+    final allowed = limit + adjustmentToday;
+    return allowed < 0 ? 0 : allowed;
+  }
+}
+
+class AppsBoard {
+  final String today;
+  final int weekday; // 0=Mon
+  final List<AppGroup> groups;
+
+  const AppsBoard({
+    required this.today,
+    required this.weekday,
+    required this.groups,
+  });
+
+  factory AppsBoard.fromJson(Map<String, dynamic> j) => AppsBoard(
+        today: j['today'] as String,
+        weekday: j['weekday'] as int,
+        groups: ((j['groups'] as List?) ?? [])
+            .map((g) => AppGroup.fromJson(g as Map<String, dynamic>))
+            .toList(),
+      );
+
+  /// Groups a parent can set limits or extra time on.
+  List<AppGroup> get limitableGroups =>
+      groups.where((g) => !g.isBlockedGroup).toList();
+
+  AppGroup? limitableGroup(String id) {
+    for (final g in limitableGroups) {
+      if (g.id == id) return g;
+    }
+    return null;
+  }
+}
+
 class AgentUser {
   final String id;
   final String agentId;

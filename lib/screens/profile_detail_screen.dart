@@ -6,9 +6,11 @@ import '../data_providers.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../utils.dart';
+import '../widgets/app_group_status.dart';
 import '../widgets/daily_limits_editor.dart';
 import '../widgets/schedule_editor.dart';
 import '../widgets/usage_chart.dart';
+import 'app_group_screen.dart';
 
 class ProfileDetailScreen extends ConsumerStatefulWidget {
   final String profileId;
@@ -38,6 +40,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     ref.invalidate(profileDetailProvider(widget.profileId));
     ref.invalidate(blockedDomainsProvider(widget.profileId));
     ref.invalidate(dashboardProvider);
+    ref.invalidate(appsBoardProvider(widget.profileId));
   }
 
   Future<void> _applyAdjustment() async {
@@ -431,6 +434,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                       initialLimits: profile.dailyLimits,
                       onSave: _saveLimits,
                     ),
+                    _buildAppLimitsCard(context),
                     const SizedBox(height: 16),
                     ScheduleEditor(
                       initialSchedules: profile.schedules,
@@ -641,6 +645,68 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
           },
         ),
       ),
+    );
+  }
+
+  /// Hidden while loading and when the server has no app groups for this
+  /// profile (or predates them), so it adds its own top spacing.
+  Widget _buildAppLimitsCard(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+    final boardAsync = ref.watch(appsBoardProvider(widget.profileId));
+
+    Widget card(List<Widget> children) => Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: children,
+              ),
+            ),
+          ),
+        );
+
+    return boardAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => card([Text('Error: $e')]),
+      data: (board) {
+        if (board == null) return const SizedBox.shrink();
+        final groups = board.limitableGroups;
+        if (groups.isEmpty) return const SizedBox.shrink();
+        return card([
+          Text(l.appLimits, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            l.appLimitsDesc,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          for (final g in groups)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(appGroupDisplayName(l, g)),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: AppGroupTodayStatus(group: g, weekday: board.weekday),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AppGroupScreen(
+                    profileId: widget.profileId,
+                    groupId: g.id,
+                  ),
+                ),
+              ),
+            ),
+        ]);
+      },
     );
   }
 
