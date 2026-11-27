@@ -46,6 +46,9 @@ class _AppGroupScreenState extends ConsumerState<AppGroupScreen> {
     } on UnauthorizedException {
       container.read(authProvider.notifier).relogin();
     } on ApiException catch (e) {
+      // A request that timed out may still have been applied: show what the
+      // server holds now, so a retry is not a blind second grant.
+      container.invalidate(appsBoardProvider(widget.profileId));
       if (mounted) _snack(e.message, error: true);
     } finally {
       if (mounted) setState(() => _adjusting = false);
