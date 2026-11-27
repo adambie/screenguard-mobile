@@ -18,7 +18,11 @@ lib/
   main.dart            App + AuthGate: serverUrl==null → ServerSetupScreen
                        → !isLoggedIn → LoginScreen → MainShell
   api_client.dart      Thin http wrapper; base = <serverUrl>/api/v1, Bearer token,
-                       10s timeout, 401 → UnauthorizedException
+                       10s timeout, 401 → UnauthorizedException; no answer
+                       (timeout, socket, TLS) → NetworkException, an ApiException
+                       so screens' `on ApiException` show it; its message comes from
+                       AppLocalizations.current (set by the delegate), and a timed-out
+                       write says it may have been saved instead of "try again"
   auth_provider.dart   AuthNotifier (StateNotifier). server_url in SharedPreferences;
                        token + username/password in FlutterSecureStorage.
                        relogin() replays stored credentials on 401.

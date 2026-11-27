@@ -57,7 +57,10 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     } on UnauthorizedException {
       ref.read(authProvider.notifier).relogin();
     } on ApiException catch (e) {
-      if (mounted) _snack(e.message, error: true);
+      if (mounted) {
+        _refresh();
+        _snack(e.message, error: true);
+      }
     } finally {
       if (mounted) setState(() => _applyingAdj = false);
     }

@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'l10n.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -7,6 +10,21 @@ class ApiException implements Exception {
   const ApiException(this.statusCode, this.message);
   @override
   String toString() => message;
+}
+
+/// The request got no answer: no connection, a TLS failure, or a timeout.
+/// Screens already report [ApiException]s, so this reaches them the same way.
+class NetworkException extends ApiException {
+  /// A write that timed out: the server may have applied it all the same, so
+  /// the message asks for a refresh rather than a blind retry.
+  final bool maybeApplied;
+
+  const NetworkException({this.maybeApplied = false}) : super(0, '');
+
+  @override
+  String get message => maybeApplied
+      ? AppLocalizations.current.noAnswerMaybeSaved
+      : AppLocalizations.current.connectionError;
 }
 
 class ApiClient {
@@ -25,39 +43,35 @@ class ApiClient {
     if (token != null) 'Authorization': 'Bearer $token',
   };
 
-  Future<dynamic> get(String path) async {
-    final res = await http
-        .get(Uri.parse('$_base$path'), headers: _headers)
-        .timeout(const Duration(seconds: 10));
-    return _handle(res);
-  }
+  Future<dynamic> get(String path) => _send(write: false,
+      () => http.get(Uri.parse('$_base$path'), headers: _headers));
 
-  Future<dynamic> post(String path, [Object? body]) async {
-    final res = await http
-        .post(Uri.parse('$_base$path'), headers: _headers,
-            body: body != null ? jsonEncode(body) : null)
-        .timeout(const Duration(seconds: 10));
-    return _handle(res);
-  }
+  Future<dynamic> post(String path, [Object? body]) => _send(() => http.post(
+      Uri.parse('$_base$path'),
+      headers: _headers,
+      body: body != null ? jsonEncode(body) : null));
 
-  Future<dynamic> put(String path, Object body) async {
-    final res = await http
-        .put(Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body))
-        .timeout(const Duration(seconds: 10));
-    return _handle(res);
-  }
+  Future<dynamic> put(String path, Object body) => _send(() => http.put(
+      Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body)));
 
-  Future<dynamic> patch(String path, Object body) async {
-    final res = await http
-        .patch(Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body))
-        .timeout(const Duration(seconds: 10));
-    return _handle(res);
-  }
+  Future<dynamic> patch(String path, Object body) => _send(() => http.patch(
+      Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body)));
 
-  Future<dynamic> delete(String path) async {
-    final res = await http
-        .delete(Uri.parse('$_base$path'), headers: _headers)
-        .timeout(const Duration(seconds: 10));
+  Future<dynamic> delete(String path) => _send(
+      () => http.delete(Uri.parse('$_base$path'), headers: _headers));
+
+  Future<dynamic> _send(Future<http.Response> Function() request,
+      {bool write = true}) async {
+    final http.Response res;
+    try {
+      res = await request().timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      throw NetworkException(maybeApplied: write);
+    } on IOException {
+      throw const NetworkException();
+    } on http.ClientException {
+      throw const NetworkException();
+    }
     return _handle(res);
   }
 
@@ -105,6 +119,8 @@ Future<ServerKind> probeScreenGuardServer(String baseUrl, {ServerKind? assume}) 
   final client = ApiClient(baseUrl: baseUrl);
   try {
     await client.get('/version');
+  } on NetworkException {
+    rethrow;
   } on ApiException {
     await client.get('/auth/status');
     return ServerKind.community;
@@ -112,6 +128,8 @@ Future<ServerKind> probeScreenGuardServer(String baseUrl, {ServerKind? assume}) 
   if (assume != null) return assume;
   try {
     await client.get('/auth/status');
+  } on NetworkException {
+    rethrow;
   } on ApiException catch (e) {
     if (e.statusCode == 404) return ServerKind.cloud;
   }
