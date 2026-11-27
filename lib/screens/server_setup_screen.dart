@@ -6,15 +6,25 @@ import 'package:multicast_dns/multicast_dns.dart';
 import '../api_client.dart';
 import '../auth_provider.dart';
 import '../l10n.dart';
+import '../tailnet.dart';
+
+/// Port a self-hosted ScreenGuard server listens on unless configured otherwise.
+const _defaultPort = 8080;
+
+/// Tailnet peers probed at once: enough to finish a home tailnet in one round,
+/// few enough that a large shared tailnet is not hit all at the same moment.
+const _tailnetProbes = 16;
 
 class DiscoveredServer {
-  final String host;
-  final int port;
+  final String url;
   final String name;
+  final bool tailnet;
 
-  const DiscoveredServer({required this.host, required this.port, required this.name});
-
-  String get url => 'http://$host:$port';
+  const DiscoveredServer({
+    required this.url,
+    required this.name,
+    this.tailnet = false,
+  });
 }
 
 class ServerSetupScreen extends ConsumerStatefulWidget {
@@ -50,7 +60,17 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
       _scanning = true;
       _discovered.clear();
     });
+    await Future.wait([_scanLocal(), _scanTailnet()]);
+    if (mounted) setState(() => _scanning = false);
+  }
 
+  void _found(DiscoveredServer server) {
+    if (mounted && !_discovered.any((s) => s.url == server.url)) {
+      setState(() => _discovered.add(server));
+    }
+  }
+
+  Future<void> _scanLocal() async {
     try {
       // reusePort is not supported on GrapheneOS/some Android kernels
       final client = MDnsClient(
@@ -77,24 +97,60 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
               .lookup<IPAddressResourceRecord>(
                   ResourceRecordQuery.addressIPv4(srv.target))
               .timeout(const Duration(seconds: 3), onTimeout: (sink) => sink.close())) {
-            final server = DiscoveredServer(
-              host: ip.address.address,
-              port: srv.port,
+            _found(DiscoveredServer(
+              url: 'http://${ip.address.address}:${srv.port}',
               name: ptr.domainName
                   .replaceAll('._parctrl._tcp.local.', '')
                   .replaceAll('pc-server.', ''),
-            );
-            if (mounted && !_discovered.any((s) => s.url == server.url)) {
-              setState(() => _discovered.add(server));
-            }
+            ));
           }
         }
       }
 
       client.stop();
     } catch (_) {}
+  }
 
-    if (mounted) setState(() => _scanning = false);
+  /// mDNS does not cross a Tailscale network, so each peer is asked directly,
+  /// [_tailnetProbes] at a time. A server published with `tailscale serve`
+  /// answers on `https://<MagicDNS name>` with a real certificate, which works
+  /// from anywhere on the tailnet and is preferred; the plain default port on
+  /// the peer's address is the fallback. Both are asked at once, and offline
+  /// peers drop packets rather than refuse them, so the short timeout is what
+  /// keeps them from holding the scan.
+  Future<void> _scanTailnet() async {
+    final List<String> peers;
+    try {
+      peers = await tailnetPeers();
+    } catch (_) {
+      return;
+    }
+    Future<bool> answers(String url) =>
+        probeScreenGuardServer(url, timeout: const Duration(seconds: 4))
+            .then((_) => true, onError: (_) => false);
+
+    final pending = peers.iterator;
+    Future<void> probeNext() async {
+      while (pending.moveNext()) {
+        final ip = pending.current;
+        final plainUrl = 'http://$ip:$_defaultPort';
+        final plain = answers(plainUrl);
+        final host = await tailnetHost(ip);
+        final url = host != null && await answers('https://$host')
+            ? 'https://$host'
+            : await plain
+                ? plainUrl
+                : null;
+        if (url == null) continue;
+        _found(DiscoveredServer(
+          url: url,
+          name: host?.split('.').first ?? '',
+          tailnet: true,
+        ));
+      }
+    }
+
+    await Future.wait(List.generate(_tailnetProbes, (_) => probeNext()));
   }
 
   /// Cloud lives at a fixed address and its flavour is known up front, so this
@@ -162,7 +218,7 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     }
     final authority = RegExp(r':\d+$').hasMatch(authorityInput)
         ? authorityInput
-        : '$authorityInput:8080';
+        : '$authorityInput:$_defaultPort';
 
     setState(() { _connecting = true; _error = null; });
     try {
@@ -290,9 +346,10 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
                       child: Card(
                         margin: EdgeInsets.zero,
                         child: ListTile(
-                          leading: Icon(Icons.dns, color: cs.primary),
+                          leading: Icon(s.tailnet ? Icons.vpn_lock : Icons.dns,
+                              color: cs.primary),
                           title: Text(s.name.isNotEmpty ? s.name : 'ScreenGuard'),
-                          subtitle: Text(s.url),
+                          subtitle: Text(s.tailnet ? 'Tailscale · ${s.url}' : s.url),
                           trailing: _connecting
                               ? const SizedBox(
                                   height: 20,
