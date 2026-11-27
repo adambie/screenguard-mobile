@@ -8,6 +8,10 @@ class AppLocalizations {
       Localizations.of<AppLocalizations>(context, AppLocalizations) ??
       AppLocalizations(const Locale('en'));
 
+  /// The localization the app is showing, as resolved by MaterialApp. For
+  /// code without a BuildContext, such as error messages built in ApiClient.
+  static AppLocalizations current = AppLocalizations(const Locale('en'));
+
   static const delegate = _AppLocalizationsDelegate();
 
   static const supportedLocales = [
@@ -66,6 +70,7 @@ class AppLocalizations {
   String get password => _t('password');
   String get createAccount => _t('createAccount');
   String get connectionError => _t('connectionError');
+  String get noAnswerMaybeSaved => _t('noAnswerMaybeSaved');
 
   // Dashboard
   String get newProfile => _t('newProfile');
@@ -280,6 +285,7 @@ class AppLocalizations {
     'username': 'Username', 'password': 'Password',
     'createAccount': 'Create account',
     'connectionError': 'Connection error. Please try again.',
+    'noAnswerMaybeSaved': 'No answer from the server. Refresh to see whether the change was saved before trying again.',
     'newProfile': 'New profile', 'profileNameLabel': 'Name',
     'noProfilesYet': 'No profiles yet. Tap + to create one.',
     'locked': 'Locked', 'profileTitle': 'Profile',
@@ -417,6 +423,7 @@ class AppLocalizations {
     'username': 'Nazwa użytkownika', 'password': 'Hasło',
     'createAccount': 'Utwórz konto',
     'connectionError': 'Błąd połączenia. Spróbuj ponownie.',
+    'noAnswerMaybeSaved': 'Brak odpowiedzi serwera. Odśwież, aby sprawdzić, czy zmiana została zapisana, zanim spróbujesz ponownie.',
     'newProfile': 'Nowy profil', 'profileNameLabel': 'Nazwa',
     'noProfilesYet': 'Brak profili. Naciśnij +, aby utworzyć.',
     'locked': 'Zablokowany', 'profileTitle': 'Profil',
@@ -544,6 +551,7 @@ class AppLocalizations {
     'username': 'Usuario', 'password': 'Contraseña',
     'createAccount': 'Crear cuenta',
     'connectionError': 'Error de conexión. Inténtalo de nuevo.',
+    'noAnswerMaybeSaved': 'El servidor no respondió. Actualiza para comprobar si el cambio se guardó antes de volver a intentarlo.',
     'newProfile': 'Nuevo perfil', 'profileNameLabel': 'Nombre',
     'noProfilesYet': 'Sin perfiles. Toca + para crear uno.',
     'locked': 'Bloqueado', 'profileTitle': 'Perfil',
@@ -668,6 +676,7 @@ class AppLocalizations {
     'username': "Nom d'utilisateur", 'password': 'Mot de passe',
     'createAccount': 'Créer un compte',
     'connectionError': 'Erreur de connexion. Veuillez réessayer.',
+    'noAnswerMaybeSaved': "Le serveur n'a pas répondu. Actualisez pour vérifier si la modification a été enregistrée avant de réessayer.",
     'newProfile': 'Nouveau profil', 'profileNameLabel': 'Nom',
     'noProfilesYet': 'Aucun profil. Appuyez sur + pour en créer un.',
     'locked': 'Verrouillé', 'profileTitle': 'Profil',
@@ -792,6 +801,7 @@ class AppLocalizations {
     'username': 'Benutzername', 'password': 'Passwort',
     'createAccount': 'Konto erstellen',
     'connectionError': 'Verbindungsfehler. Bitte erneut versuchen.',
+    'noAnswerMaybeSaved': 'Keine Antwort vom Server. Aktualisieren Sie, um zu prüfen, ob die Änderung gespeichert wurde, bevor Sie es erneut versuchen.',
     'newProfile': 'Neues Profil', 'profileNameLabel': 'Name',
     'noProfilesYet': 'Keine Profile. Tippen Sie auf +, um eines zu erstellen.',
     'locked': 'Gesperrt', 'profileTitle': 'Profil',
@@ -916,6 +926,7 @@ class AppLocalizations {
     'username': 'Usuário', 'password': 'Senha',
     'createAccount': 'Criar conta',
     'connectionError': 'Erro de conexão. Tente novamente.',
+    'noAnswerMaybeSaved': 'O servidor não respondeu. Atualize para verificar se a alteração foi salva antes de tentar novamente.',
     'newProfile': 'Novo perfil', 'profileNameLabel': 'Nome',
     'noProfilesYet': 'Sem perfis. Toque em + para criar um.',
     'locked': 'Bloqueado', 'profileTitle': 'Perfil',
@@ -1028,7 +1039,7 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 
   @override
   Future<AppLocalizations> load(Locale locale) =>
-      Future.value(AppLocalizations(locale));
+      Future.value(AppLocalizations.current = AppLocalizations(locale));
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
