@@ -33,4 +33,44 @@ void main() {
     expect(unlockAdjustmentFor(0), 0);
     expect(unlockAdjustmentFor(30), 0);
   });
+
+  test('apps board parses groups and applies today\'s adjustment', () {
+    final board = AppsBoard.fromJson({
+      'today': '2026-11-27',
+      'weekday': 4,
+      'apps': [],
+      'groups': [
+        {
+          'id': 'g-games',
+          'name': 'Games',
+          'builtin': 'games',
+          'rules': [],
+          'limits': [
+            {'day_of_week': 4, 'allowed_minutes': 60},
+          ],
+          'adjustment_today': -75,
+          'today_seconds': 1200,
+        },
+        {
+          'id': 'g-blocked',
+          'name': 'Blocked',
+          'builtin': 'blocked',
+          'rules': [],
+          'limits': [],
+          'adjustment_today': 0,
+          'today_seconds': 0,
+        },
+      ],
+    });
+
+    expect(board.weekday, 4);
+    expect(board.limitableGroups.map((g) => g.id), ['g-games']);
+    expect(board.limitableGroup('g-blocked'), isNull);
+    final games = board.limitableGroup('g-games')!;
+    expect(games.todaySeconds, 1200);
+    expect(games.limitFor(4), 60);
+    expect(games.limitFor(5), isNull);
+    expect(games.allowedMinutesWithAdjustment(4), 0);
+    expect(games.allowedMinutesWithAdjustment(5), isNull);
+  });
 }

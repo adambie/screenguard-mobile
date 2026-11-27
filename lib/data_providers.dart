@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'api_client.dart';
 import 'auth_provider.dart';
 import 'models.dart';
 
@@ -71,4 +72,18 @@ final blockedDomainsProvider =
   return ((data['blocked_domains'] as List?) ?? [])
       .map((d) => BlockedDomain.fromJson(d as Map<String, dynamic>))
       .toList();
+});
+
+/// Null when the server predates app groups (404 on the route).
+final appsBoardProvider =
+    FutureProvider.autoDispose.family<AppsBoard?, String>((ref, profileId) async {
+  final client = ref.watch(apiClientProvider);
+  try {
+    final data =
+        await client.get('/profiles/$profileId/apps') as Map<String, dynamic>;
+    return AppsBoard.fromJson(data);
+  } on ApiException catch (e) {
+    if (e.statusCode == 404) return null;
+    rethrow;
+  }
 });

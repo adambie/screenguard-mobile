@@ -24,16 +24,19 @@ lib/
                        relogin() replays stored credentials on 401.
   data_providers.dart  Riverpod FutureProviders (autoDispose) — one per read endpoint
   models.dart          Hand-written fromJson: Profile, Schedule, DailyLimit, Agent,
-                       AgentUser, ProfileStatus, UsageEntry, BlockedDomain
+                       AgentUser, ProfileStatus, UsageEntry, BlockedDomain,
+                       AppGroup, AppsBoard (GET /profiles/{id}/apps; null on 404,
+                       i.e. servers older than app groups)
   l10n.dart            Hand-rolled 1007-line localization map, 6 locales
                        (en/pl/es/fr/de/pt). NOT gen-l10n — no ARB files.
                        Adding a string = add a getter + entries in every locale map.
   settings_provider.dart  theme mode / language / show-logs, in SharedPreferences
-  screens/             dashboard, profile_detail, agents, agent_detail, login,
+  screens/             dashboard, profile_detail, app_group (one app group's limits
+                       + extra time today), agents, agent_detail, login,
                        server_setup, settings, about
-  widgets/             daily_limits_editor, schedule_editor, usage_chart (fl_chart),
-                       screen_guard_logo
-test/widget_test.dart  4 model-level unit tests (no widget tests despite the name)
+  widgets/             daily_limits_editor (also reused per app group), schedule_editor,
+                       usage_chart (fl_chart), screen_guard_logo, app_group_status
+test/widget_test.dart  model-level unit tests (no widget tests despite the name)
 ```
 
 Server discovery is mDNS over `_parctrl._tcp.local.` in `server_setup_screen.dart`,

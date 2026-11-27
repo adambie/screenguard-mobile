@@ -209,6 +209,18 @@ class AppLocalizations {
   String get domainDeleted => _t('domainDeleted');
   String get confirmRemoveDomain => _t('confirmRemoveDomain');
 
+  // App groups
+  String get appLimits => _t('appLimits');
+  String get appLimitsDesc => _t('appLimitsDesc');
+  String get groupGames => _t('groupGames');
+  String get groupBrowsers => _t('groupBrowsers');
+  String get extraTimeToday => _t('extraTimeToday');
+  String get extraTimeNeedsLimit => _t('extraTimeNeedsLimit');
+  String get groupLimits => _t('groupLimits');
+  String get groupLimitsDesc => _t('groupLimitsDesc');
+  String get groupNotFound => _t('groupNotFound');
+  String timeLeft(String t) => _t('timeLeft').replaceAll('{t}', t);
+
   // Localized time ago
   String timeAgo(int? unixSeconds) {
     if (unixSeconds == null) return _t('never');
@@ -389,6 +401,15 @@ class AppLocalizations {
     'domainAdded': 'Domain added.',
     'domainDeleted': 'Domain removed.',
     'confirmRemoveDomain': 'Remove this domain from the blocklist?',
+    'appLimits': 'App limits',
+    'appLimitsDesc': 'Time limits for groups of apps. Tap a group to change its limits or give extra time today.',
+    'groupGames': 'Games', 'groupBrowsers': 'Web browsers',
+    'extraTimeToday': 'Extra time today',
+    'extraTimeNeedsLimit': 'Extra time only applies on days with a limit. Set a limit for today below to give extra time.',
+    'groupLimits': 'Daily limits for this group',
+    'groupLimitsDesc': 'Max time per day for the apps in this group. The overall screen-time limit still applies.',
+    'groupNotFound': 'This app group no longer exists.',
+    'timeLeft': '{t} left',
   };
 
   static const _pl = <String, String>{
@@ -516,6 +537,15 @@ class AppLocalizations {
     'selectTimezone': 'Wybierz strefę czasową',
     'search': 'Szukaj...',
     'notSet': 'Nie ustawiono',
+    'appLimits': 'Limity aplikacji',
+    'appLimitsDesc': 'Limity czasu dla grup aplikacji. Naciśnij grupę, aby zmienić jej limity lub dać dziś dodatkowy czas.',
+    'groupGames': 'Gry', 'groupBrowsers': 'Przeglądarki internetowe',
+    'extraTimeToday': 'Dodatkowy czas dziś',
+    'extraTimeNeedsLimit': 'Dodatkowy czas działa tylko w dni z limitem. Ustaw poniżej limit na dziś, aby dać dodatkowy czas.',
+    'groupLimits': 'Dzienne limity tej grupy',
+    'groupLimitsDesc': 'Maksymalny czas dziennie dla aplikacji z tej grupy. Ogólny limit czasu ekranu nadal obowiązuje.',
+    'groupNotFound': 'Ta grupa aplikacji już nie istnieje.',
+    'timeLeft': 'zostało {t}',
   };
 
   static const _es = <String, String>{
@@ -640,6 +670,15 @@ class AppLocalizations {
     'selectTimezone': 'Seleccionar zona horaria',
     'search': 'Buscar...',
     'notSet': 'No configurado',
+    'appLimits': 'Límites de apps',
+    'appLimitsDesc': 'Límites de tiempo para grupos de apps. Toca un grupo para cambiar sus límites o dar tiempo extra hoy.',
+    'groupGames': 'Juegos', 'groupBrowsers': 'Navegadores web',
+    'extraTimeToday': 'Tiempo extra hoy',
+    'extraTimeNeedsLimit': 'El tiempo extra solo se aplica los días con límite. Establece abajo un límite para hoy para dar tiempo extra.',
+    'groupLimits': 'Límites diarios de este grupo',
+    'groupLimitsDesc': 'Tiempo máximo por día para las apps de este grupo. El límite general de tiempo de pantalla sigue aplicándose.',
+    'groupNotFound': 'Este grupo de apps ya no existe.',
+    'timeLeft': 'quedan {t}',
   };
 
   static const _fr = <String, String>{
@@ -764,6 +803,15 @@ class AppLocalizations {
     'selectTimezone': 'Choisir un fuseau horaire',
     'search': 'Rechercher...',
     'notSet': 'Non défini',
+    'appLimits': 'Limites des applis',
+    'appLimitsDesc': "Limites de temps pour des groupes d'applis. Appuyez sur un groupe pour modifier ses limites ou accorder du temps supplémentaire aujourd'hui.",
+    'groupGames': 'Jeux', 'groupBrowsers': 'Navigateurs web',
+    'extraTimeToday': "Temps supplémentaire aujourd'hui",
+    'extraTimeNeedsLimit': "Le temps supplémentaire ne s'applique que les jours avec une limite. Définissez ci-dessous une limite pour aujourd'hui pour en accorder.",
+    'groupLimits': 'Limites quotidiennes de ce groupe',
+    'groupLimitsDesc': "Temps maximum par jour pour les applis de ce groupe. La limite globale de temps d'écran s'applique toujours.",
+    'groupNotFound': "Ce groupe d'applis n'existe plus.",
+    'timeLeft': 'il reste {t}',
   };
 
   static const _de = <String, String>{
@@ -888,6 +936,15 @@ class AppLocalizations {
     'selectTimezone': 'Zeitzone auswählen',
     'search': 'Suchen...',
     'notSet': 'Nicht gesetzt',
+    'appLimits': 'App-Limits',
+    'appLimitsDesc': 'Zeitlimits für App-Gruppen. Tippen Sie auf eine Gruppe, um ihre Limits zu ändern oder heute zusätzliche Zeit zu geben.',
+    'groupGames': 'Spiele', 'groupBrowsers': 'Webbrowser',
+    'extraTimeToday': 'Zusätzliche Zeit heute',
+    'extraTimeNeedsLimit': 'Zusätzliche Zeit gilt nur an Tagen mit Limit. Legen Sie unten ein Limit für heute fest, um zusätzliche Zeit zu geben.',
+    'groupLimits': 'Tägliche Limits dieser Gruppe',
+    'groupLimitsDesc': 'Maximale Zeit pro Tag für die Apps dieser Gruppe. Das allgemeine Bildschirmzeit-Limit gilt weiterhin.',
+    'groupNotFound': 'Diese App-Gruppe existiert nicht mehr.',
+    'timeLeft': 'noch {t}',
   };
 
   static const _pt = <String, String>{
@@ -1012,6 +1069,15 @@ class AppLocalizations {
     'selectTimezone': 'Selecionar fuso horário',
     'search': 'Pesquisar...',
     'notSet': 'Não definido',
+    'appLimits': 'Limites de apps',
+    'appLimitsDesc': 'Limites de tempo para grupos de apps. Toque em um grupo para alterar seus limites ou dar tempo extra hoje.',
+    'groupGames': 'Jogos', 'groupBrowsers': 'Navegadores',
+    'extraTimeToday': 'Tempo extra hoje',
+    'extraTimeNeedsLimit': 'O tempo extra só vale nos dias com limite. Defina abaixo um limite para hoje para dar tempo extra.',
+    'groupLimits': 'Limites diários deste grupo',
+    'groupLimitsDesc': 'Tempo máximo por dia para os apps deste grupo. O limite geral de tempo de tela continua valendo.',
+    'groupNotFound': 'Este grupo de apps não existe mais.',
+    'timeLeft': 'restam {t}',
   };
 
   static const _strings = <String, Map<String, String>>{

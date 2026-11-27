@@ -6,11 +6,15 @@ import '../utils.dart';
 class DailyLimitsEditor extends StatefulWidget {
   final List<DailyLimit> initialLimits;
   final Future<void> Function(List<DailyLimit>) onSave;
+  final String? title;
+  final String? description;
 
   const DailyLimitsEditor({
     super.key,
     required this.initialLimits,
     required this.onSave,
+    this.title,
+    this.description,
   });
 
   @override
@@ -49,8 +53,11 @@ class _DailyLimitsEditorState extends State<DailyLimitsEditor> {
         limits.add(DailyLimit(dayOfWeek: i, allowedMinutes: _minutes[i]));
       }
     }
-    await widget.onSave(limits);
-    if (mounted) setState(() => _saving = false);
+    try {
+      await widget.onSave(limits);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -63,10 +70,11 @@ class _DailyLimitsEditorState extends State<DailyLimitsEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l.dailyLimits, style: Theme.of(context).textTheme.titleMedium),
+            Text(widget.title ?? l.dailyLimits,
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(
-              l.dailyLimitsDesc,
+              widget.description ?? l.dailyLimitsDesc,
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
