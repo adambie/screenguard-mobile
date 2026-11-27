@@ -40,6 +40,14 @@ Server discovery is mDNS over `_parctrl._tcp.local.` in `server_setup_screen.dar
 with a custom `rawDatagramSocketFactory` forcing `reusePort: false` (GrapheneOS and
 some Android kernels reject reusePort — don't "simplify" that back).
 
+mDNS does not cross a Tailscale network, so the same scan also probes tailnet peers
+on port 8080. The peer list comes from `MainActivity.kt` over the
+`cc.screenguard.mobile/tailnet` method channel (`lib/tailnet.dart`): Tailscale's
+Android client installs one /32 VPN route per peer, readable by any app through
+`ConnectivityManager.getLinkProperties()`; addresses in 100.64.0.0/10 minus its
+100.100.100.100 resolver are the peers. A 2 s TCP connect drops offline peers before
+the HTTP probe; names come from a reverse lookup via MagicDNS.
+
 Connect probe is `probeScreenGuardServer()` in `api_client.dart`, which both checks
 reachability **and classifies the server**. There are two flavours, on independent
 version axes (cloud versions the product, community the wire protocol) — so never

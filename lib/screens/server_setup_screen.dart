@@ -6,13 +6,23 @@ import 'package:multicast_dns/multicast_dns.dart';
 import '../api_client.dart';
 import '../auth_provider.dart';
 import '../l10n.dart';
+import '../tailnet.dart';
+
+/// Port a self-hosted ScreenGuard server listens on unless configured otherwise.
+const _defaultPort = 8080;
 
 class DiscoveredServer {
   final String host;
   final int port;
   final String name;
+  final bool tailnet;
 
-  const DiscoveredServer({required this.host, required this.port, required this.name});
+  const DiscoveredServer({
+    required this.host,
+    required this.port,
+    required this.name,
+    this.tailnet = false,
+  });
 
   String get url => 'http://$host:$port';
 }
@@ -50,7 +60,17 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
       _scanning = true;
       _discovered.clear();
     });
+    await Future.wait([_scanLocal(), _scanTailnet()]);
+    if (mounted) setState(() => _scanning = false);
+  }
 
+  void _found(DiscoveredServer server) {
+    if (mounted && !_discovered.any((s) => s.url == server.url)) {
+      setState(() => _discovered.add(server));
+    }
+  }
+
+  Future<void> _scanLocal() async {
     try {
       // reusePort is not supported on GrapheneOS/some Android kernels
       final client = MDnsClient(
@@ -77,24 +97,46 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
               .lookup<IPAddressResourceRecord>(
                   ResourceRecordQuery.addressIPv4(srv.target))
               .timeout(const Duration(seconds: 3), onTimeout: (sink) => sink.close())) {
-            final server = DiscoveredServer(
+            _found(DiscoveredServer(
               host: ip.address.address,
               port: srv.port,
               name: ptr.domainName
                   .replaceAll('._parctrl._tcp.local.', '')
                   .replaceAll('pc-server.', ''),
-            );
-            if (mounted && !_discovered.any((s) => s.url == server.url)) {
-              setState(() => _discovered.add(server));
-            }
+            ));
           }
         }
       }
 
       client.stop();
     } catch (_) {}
+  }
 
-    if (mounted) setState(() => _scanning = false);
+  /// mDNS does not cross a Tailscale network, so each peer is asked directly
+  /// on the default port. A quick TCP connect first drops offline peers and
+  /// peers with nothing on that port, which would otherwise each hold the
+  /// scan for the full HTTP timeout.
+  Future<void> _scanTailnet() async {
+    final List<String> peers;
+    try {
+      peers = await tailnetPeers();
+    } catch (_) {
+      return;
+    }
+    await Future.wait(peers.map((ip) async {
+      try {
+        final socket = await Socket.connect(ip, _defaultPort,
+            timeout: const Duration(seconds: 2));
+        socket.destroy();
+        await probeScreenGuardServer('http://$ip:$_defaultPort');
+        _found(DiscoveredServer(
+          host: ip,
+          port: _defaultPort,
+          name: await tailnetName(ip) ?? '',
+          tailnet: true,
+        ));
+      } catch (_) {}
+    }));
   }
 
   /// Cloud lives at a fixed address and its flavour is known up front, so this
@@ -162,7 +204,7 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     }
     final authority = RegExp(r':\d+$').hasMatch(authorityInput)
         ? authorityInput
-        : '$authorityInput:8080';
+        : '$authorityInput:$_defaultPort';
 
     setState(() { _connecting = true; _error = null; });
     try {
@@ -290,7 +332,8 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
                       child: Card(
                         margin: EdgeInsets.zero,
                         child: ListTile(
-                          leading: Icon(Icons.dns, color: cs.primary),
+                          leading: Icon(s.tailnet ? Icons.vpn_lock : Icons.dns,
+                              color: cs.primary),
                           title: Text(s.name.isNotEmpty ? s.name : 'ScreenGuard'),
                           subtitle: Text(s.url),
                           trailing: _connecting
