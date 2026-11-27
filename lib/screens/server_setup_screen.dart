@@ -16,19 +16,15 @@ const _defaultPort = 8080;
 const _tailnetProbes = 16;
 
 class DiscoveredServer {
-  final String host;
-  final int port;
+  final String url;
   final String name;
   final bool tailnet;
 
   const DiscoveredServer({
-    required this.host,
-    required this.port,
+    required this.url,
     required this.name,
     this.tailnet = false,
   });
-
-  String get url => 'http://$host:$port';
 }
 
 class ServerSetupScreen extends ConsumerStatefulWidget {
@@ -102,8 +98,7 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
                   ResourceRecordQuery.addressIPv4(srv.target))
               .timeout(const Duration(seconds: 3), onTimeout: (sink) => sink.close())) {
             _found(DiscoveredServer(
-              host: ip.address.address,
-              port: srv.port,
+              url: 'http://${ip.address.address}:${srv.port}',
               name: ptr.domainName
                   .replaceAll('._parctrl._tcp.local.', '')
                   .replaceAll('pc-server.', ''),
@@ -116,10 +111,13 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     } catch (_) {}
   }
 
-  /// mDNS does not cross a Tailscale network, so each peer is asked directly
-  /// on the default port, [_tailnetProbes] at a time. Offline peers drop
-  /// packets rather than refuse them, so the short timeout is what keeps them
-  /// from holding the scan.
+  /// mDNS does not cross a Tailscale network, so each peer is asked directly,
+  /// [_tailnetProbes] at a time. A server published with `tailscale serve`
+  /// answers on `https://<MagicDNS name>` with a real certificate, which works
+  /// from anywhere on the tailnet and is preferred; the plain default port on
+  /// the peer's address is the fallback. Both are asked at once, and offline
+  /// peers drop packets rather than refuse them, so the short timeout is what
+  /// keeps them from holding the scan.
   Future<void> _scanTailnet() async {
     final List<String> peers;
     try {
@@ -127,21 +125,26 @@ class _ServerSetupScreenState extends ConsumerState<ServerSetupScreen> {
     } catch (_) {
       return;
     }
+    Future<bool> answers(String url) =>
+        probeScreenGuardServer(url, timeout: const Duration(seconds: 4))
+            .then((_) => true, onError: (_) => false);
+
     final pending = peers.iterator;
     Future<void> probeNext() async {
       while (pending.moveNext()) {
         final ip = pending.current;
-        final name = tailnetName(ip);
-        try {
-          await probeScreenGuardServer('http://$ip:$_defaultPort',
-              timeout: const Duration(seconds: 4));
-        } catch (_) {
-          continue;
-        }
+        final plainUrl = 'http://$ip:$_defaultPort';
+        final plain = answers(plainUrl);
+        final host = await tailnetHost(ip);
+        final url = host != null && await answers('https://$host')
+            ? 'https://$host'
+            : await plain
+                ? plainUrl
+                : null;
+        if (url == null) continue;
         _found(DiscoveredServer(
-          host: ip,
-          port: _defaultPort,
-          name: await name ?? '',
+          url: url,
+          name: host?.split('.').first ?? '',
           tailnet: true,
         ));
       }

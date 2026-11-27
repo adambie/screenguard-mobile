@@ -11,15 +11,16 @@ Future<List<String>> tailnetPeers() async {
   return await _channel.invokeListMethod<String>('peers') ?? const [];
 }
 
-/// The peer's MagicDNS machine name ("nas" for `nas.tail1234.ts.net`), or null
-/// when the reverse lookup fails or MagicDNS is off.
-Future<String?> tailnetName(String ip) async {
+/// The peer's MagicDNS name (`nas.tail1234.ts.net`), or null when the reverse
+/// lookup fails or MagicDNS is off.
+Future<String?> tailnetHost(String ip) async {
   try {
     final host = (await InternetAddress(ip)
             .reverse()
             .timeout(const Duration(seconds: 2)))
         .host;
-    return host == ip ? null : host.split('.').first;
+    if (host == ip) return null;
+    return host.endsWith('.') ? host.substring(0, host.length - 1) : host;
   } catch (_) {
     return null;
   }
